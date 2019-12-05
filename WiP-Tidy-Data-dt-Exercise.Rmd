@@ -146,6 +146,73 @@ WP
 ```
 
 
+# Exploratory Analysis
+
+```{r}
+WP[Country %in% "Portugal"]
+WP[Country %in% "Canada"]
+WP[Country %in% "Japan"]
+```
+
+```{r Japan}
+library(ggplot2)
+library(magrittr)
+WP[Country %in% "Japan"] %>%
+  ggplot(aes(Year, pctWIP)) +
+    geom_line() + geom_point() +
+    scale_y_continuous(limits = c(0,15)) +
+    ylab("% Women in Parliament")
+```
+
+```{r Japan vs World}
+
+WP[Country %in% c("Portugal", "Japan", "Spain", "China", "Canada", "Argentina", "World")] %>%
+  ggplot(aes(Year, pctWIP, colour = Country))+
+    geom_line() +
+    geom_point() +
+    scale_x_continuous(breaks = seq(1990,2020,5)) +
+    ggtitle("Women in Parliament: World Countries") +
+    ylab("% Women in Parliament")
+
+```
+
+```{r highest %}
+WP[order(-pctWIP), head(.SD,10)]
+```
+
+```{r hiesth % by year}
+WP[order(Year, -pctWIP), head(.SD, 1), by= Year]
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
