@@ -185,12 +185,77 @@ WP[order(Year, -pctWIP), head(.SD, 1), by= Year]
 ```
 
 
+```{r merging Continent}
+library(countrycode)
+c1 <- as.data.table(codelist)[,.(continent, wb)]
+setnames(c1, c("continent", "wb"), c("Continent","Code"))
+cWP <- c1[WP, on="Code"] #Faz merge às duas data.tables em que os valores na coluna Code sejam iguais
+```
 
+```{r Highest percentages by year and continent}
+cWP[Year %in% c(1990, 2018) & !is.na(Continent)][       #Remove as linhas que têm NAs
+  order(Year, -pctWIP), head(.SD,1),
+  by= .(Year,Continent)][
+    order(Continent,Year), .(Continent, Year, Country, pctWIP)]    
+```
 
+```{r Decline in percentage}
+dWP <- cWP[order(Country, Year), .SD[c(1,.N)], by=Country][
+  , pctDiff:= pctWIP - shift(pctWIP), by=Country][
+    pctDiff<0][
+      order(pctDiff)]
+dWP[!is.na(Continent), .(Country, pctWIP, pctDiff)]
+```
 
+```{r Visualisation}
+dclpct <- unique(dWP[!is.na(Continent) & pctDiff <= -5]$Country)
+WP[Country %in% dclpct] %>%
+  ggplot(aes(Year, pctWIP, colour= Country))+
+  geom_line()+
+  geom_point()+
+  scale_x_continuous(breaks = seq(1990,2020,5))+
+  scale_y_continuous(limits = c(0,40), breaks=seq(0,40,10))+
+  ggtitle("Women in Parliament: Decline >=5%")+
+  ylab("% Women in Parliament")
+```
 
+```{r Global ranks by year}
+cWP[!is.na(Continent), `:=`(RankG = rank(-pctWIP), TotalG = .N), by= .(Year)]
+cWP[Country=="Portugal", .(Country, Year, pctWIP, Ratio, RankG, TotalG)]
+```
 
+```{r Continent ranks by year}
+cWP[!is.na(Continent), `:=`(RankC = rank(-pctWIP), TotalC = .N), by= .(Continent, Year)]
+cWP[Country=="Portugal", .(Country, Year, pctWIP, Ratio, RankC, TotalC)][ order((Year))]
+```
 
+```{r plot before}
+cWP[ Country %in% c("Portugal", "Sweden", "Spain", "Hungary", "Romania", "Finland", "Germany")] %>%
+  ggplot(aes(Year, RankC, colour=Country))+
+    geom_line()+
+    geom_point()+
+    scale_x_continuous(breaks = seq(1990,2020,5))+
+    scale_y_continuous(limits = c(0,45), breaks = seq(0,45,10))+
+    ggtitle("Women in Parliament: Ranked")+
+    ylab("Rank in Europe")
+```
+
+```{r Highest rank by year and contient}
+cWP[Year %in% c(1990,2018) & RankC==1][
+  order(Continent, Year), .(Continent, Year, Country, pctWIP, RankC)]
+```
+
+```{r}
+library(gghighlight)
+cWP[is.na(Continent)] %>%
+  ggplot(aes(Year, pctWIP, group=Country))+
+    geom_line()+
+    gghighlight(Country=="World", use_direct_label = FALSE)+
+    scale_x_continuous(breaks = seq(1990,2020,5))+
+    scale_y_continuous(limits = c(0,40), breaks = seq(0,40,10))+
+    ggtitle("Women in Parliament: Global Trends")+
+    ylab("% Women in Parliament")
+```
 
 
 
